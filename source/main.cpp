@@ -6,7 +6,6 @@
 
 class PngImageAsset {
     public:
-
         PngImageAsset(const char *path, float alpha = 1.0) {
             ASSERT_EXIT(lodepng::decode(m_buffer, m_width, m_height, path));
 
@@ -51,9 +50,7 @@ void setImageColour(PngImageAsset *img, tsl::Color colour) {
 }
 
 class InvisibleOverlayFrame : public tsl::elm::OverlayFrame {
-
     public:
-
         InvisibleOverlayFrame(const std::string& title, const std::string& subtitle) : tsl::elm::OverlayFrame(title, subtitle) {}
 
         virtual void draw(tsl::gfx::Renderer *renderer) override {
@@ -69,9 +66,7 @@ class InvisibleOverlayFrame : public tsl::elm::OverlayFrame {
 };
 
 class UnboundedDrawerer : public tsl::elm::Element {
-
     public:
-
         UnboundedDrawerer(std::function<void(tsl::gfx::Renderer* r, s32 x, s32 y, s32 w, s32 h)> renderFunc) : tsl::elm::Element(), m_renderFunc(renderFunc) {}
         virtual ~UnboundedDrawerer() {}
 
@@ -88,9 +83,7 @@ class UnboundedDrawerer : public tsl::elm::Element {
 };
 
 class ControllerOverlayGui : public tsl::Gui {
-
     public:
-
         ControllerOverlayGui(uint8_t alpha = 0xff)
          : m_xpos(5)
          , m_ypos(5)
@@ -104,7 +97,8 @@ class ControllerOverlayGui : public tsl::Gui {
          , m_img_lbutton("sdmc:/img/switchpro-lbutton.png", float(alpha) / 0xff)
          , m_img_rbutton("sdmc:/img/switchpro-rbutton.png", float(alpha) / 0xff) {
 
-            tsl::Color c = {0xA, 0xA, 0xA, alpha >> 4};
+            //tsl::Color c = {0xA, 0xA, 0xA, alpha >> 4};
+            tsl::Color c = {0x0, 0xF, 0xD, alpha >> 4};
             setImageColour(&m_img_dpad, c);
             setImageColour(&m_img_lbutton, c);
             setImageColour(&m_img_rbutton, c);
@@ -115,9 +109,14 @@ class ControllerOverlayGui : public tsl::Gui {
 
             auto buttons = new UnboundedDrawerer([this](tsl::gfx::Renderer *renderer, s32 x, s32 y, s32 w, s32 h) {
                 renderer->drawBitmap(m_xpos,       m_ypos, m_img_base.getWidth(), m_img_base.getHeight(), m_img_base.getBuffer(), tsl::gfx::PixelBlendMode_Dst);
-                renderer->drawBitmap(m_xpos + 69,  m_ypos + 71, m_img_dpad.getWidth(), m_img_dpad.getHeight(), m_img_dpad.getBuffer(), tsl::gfx::PixelBlendMode_Dst);
-                //renderer->drawBitmap(m_xpos + 28,  m_ypos + 1,  m_img_lbutton.getWidth(), m_img_lbutton.getHeight(), m_img_lbutton.getBuffer());
-                //renderer->drawBitmap(m_xpos + 166, m_ypos + 1,  m_img_rbutton.getWidth(), m_img_rbutton.getHeight(), m_img_rbutton.getBuffer());
+                //renderer->drawBitmap(m_xpos + 69,  m_ypos + 71, m_img_dpad.getWidth(), m_img_dpad.getHeight(), m_img_dpad.getBuffer(), tsl::gfx::PixelBlendMode_Dst);
+
+                if (m_buttons & HidNpadButton_L || m_buttons & HidNpadButton_ZL)
+                    renderer->drawBitmap(m_xpos + 28,  m_ypos + 1,  m_img_lbutton.getWidth(), m_img_lbutton.getHeight(), m_img_lbutton.getBuffer());
+                if (m_buttons & HidNpadButton_R || m_buttons & HidNpadButton_ZR)
+                    renderer->drawBitmap(m_xpos + 166, m_ypos + 1,  m_img_rbutton.getWidth(), m_img_rbutton.getHeight(), m_img_rbutton.getBuffer());
+                if (m_buttons & HidNpadButton_Left  || m_buttons & HidNpadButton_Up  || m_buttons & HidNpadButton_Right  || m_buttons & HidNpadButton_Down )
+                    renderer->drawBitmap(m_xpos + 69, m_ypos + 71,  m_img_dpad.getWidth(), m_img_dpad.getHeight(), m_img_dpad.getBuffer());
 
                 renderer->drawCircle(m_xpos + 215, m_ypos + 54, 9, true, m_buttons & HidNpadButton_A ? m_colour_active : m_colour_inactive); // A button 
                 renderer->drawCircle(m_xpos + 195, m_ypos + 71, 9, true, m_buttons & HidNpadButton_B ? m_colour_active : m_colour_inactive); // B button
@@ -169,16 +168,15 @@ class ControllerOverlayGui : public tsl::Gui {
 };
 
 class MainGui : public tsl::Gui {
-
     public:
         MainGui() { }
 
         virtual tsl::elm::Element* createUI() override {
-            auto frame = new tsl::elm::OverlayFrame("Controller Overlay", "v1.0.0");
+            auto frame = new tsl::elm::OverlayFrame("ovl-controller-inputs", "v1.0.0");
 
             auto list = new tsl::elm::List();
 
-            auto overlay_gui = new tsl::elm::ListItem("Controller Overlay");
+            auto overlay_gui = new tsl::elm::ListItem("Launch Overlay");
             overlay_gui->setClickListener([](std::uint64_t keys) {
                 if (keys & HidNpadButton_A) {
                     tsl::hlp::requestForeground(false);
@@ -205,7 +203,6 @@ class MainGui : public tsl::Gui {
 };
 
 class Overlay : public tsl::Overlay {
-
     public:
 
         virtual void initServices() override {
